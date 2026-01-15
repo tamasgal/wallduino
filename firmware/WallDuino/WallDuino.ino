@@ -3,17 +3,17 @@
 
 #define WALLDUINO_VERSION 1.0
 
-#define IR_RECEIVE_PIN 4
-#define EN_PIN 6
-#define A1_PIN 7
-#define A2_PIN 8
+#define IR_RECEIVE_PIN 5
+#define EN_PIN 4
+#define A1_PIN 2
+#define A2_PIN 3
 #define POSITION_PIN A0
-#define MOTOR_DIRECTION_PIN 9
+#define MOTOR_DIRECTION_PIN 6
 
 const float MIN_POSITION = 20.0f;          // [deg]
 const float MAX_POSITION = 250.0f;         // [deg]
 const float MAX_MOVEMENT = 5.0f;           // Maximum degrees per button press
-const float POSITION_TOLERANCE = 1.0f;     // [deg]
+const float POSITION_TOLERANCE = 3.0f;     // [deg]
 const unsigned long STOP_DELAY = 100;      // delay after motor stop [ms]
 const unsigned long PRESET_TIMEOUT = 500;  // between consecutive clicks [ms]
 
@@ -27,7 +27,7 @@ const uint8_t RIGHT_COMMANDS[] = {
   0x4E,  // WallWizard
 };
 
-const uint8_t HOME_COMMANDS[] = {
+const uint8_t STOP_COMMANDS[] = {
   0x4F,  // WallWizard
 };
 
@@ -65,11 +65,11 @@ bool isMoving() {
 }
 
 bool isMovingLeft() {
-  return motorState != MOVING_LEFT;
+  return motorState == MOVING_LEFT;
 }
 
 bool isMovingRight() {
-  return motorState != MOVING_RIGHT;
+  return motorState == MOVING_RIGHT;
 }
 
 inline bool commandInArray(uint8_t cmd, const uint8_t* arr, uint8_t size) {
@@ -87,8 +87,8 @@ bool rightKeyPressed() {
   return CHECK_COMMAND(RIGHT_COMMANDS);
 }
 
-bool homeKeyPressed() {
-  return CHECK_COMMAND(HOME_COMMANDS);
+bool stopKeyPressed() {
+  return CHECK_COMMAND(STOP_COMMANDS);
 }
 
 bool preset1KeyPressed() {
@@ -101,8 +101,8 @@ bool preset2KeyPressed() {
 
 void setup() {
   Serial.begin(115200);
-  Serial.print("Starting WallDuino version ");
-  Serial.print(WALLDUINO_VERSION);
+  Serial.print("\nStarting WallDuino version ");
+  Serial.println(WALLDUINO_VERSION);
 
   pinMode(EN_PIN, OUTPUT);
   pinMode(A1_PIN, OUTPUT);
@@ -110,7 +110,6 @@ void setup() {
   pinMode(MOTOR_DIRECTION_PIN, INPUT_PULLUP);
   motorStop();
   unsetTarget();
-
   IrReceiver.begin(IR_RECEIVE_PIN, ENABLE_LED_FEEDBACK);
 }
 
@@ -121,7 +120,9 @@ int getMotorDirection() {
 
 void motorLeft() {
   if (isMovingRight()) {
+    Serial.println("Motor is moving right, stopping first.");
     motorStop();
+    Serial.println("Now moving left.");
   }
   motorState = MOVING_LEFT;
   digitalWrite(A1_PIN, HIGH);
@@ -131,7 +132,9 @@ void motorLeft() {
 
 void motorRight() {
   if (isMovingLeft()) {
+    Serial.println("Motor is moving left, stopping first.");
     motorStop();
+    Serial.println("Now moving right.");
   }
   motorState = MOVING_RIGHT;
   digitalWrite(A1_PIN, LOW);
@@ -143,6 +146,7 @@ void motorStop() {
   digitalWrite(EN_PIN, LOW);
   delay(STOP_DELAY);
   motorState = STOPPED;
+  Serial.println("Motor stopped.");
 }
 
 // Return the current position in degrees
@@ -206,6 +210,7 @@ void loop() {
   }
 
   if (targetIsSet()) {
+    delay(100);
     float currentPosition = readPosition();
     // we allow an external jumper to change the actual direction of movement
     float deltaPosition = getMotorDirection() * (targetPosition - currentPosition);
@@ -239,8 +244,9 @@ void loop() {
       Serial.println("RIGHT");
       increaseTarget();
       printTarget();
-    } else if (homeKeyPressed()) {
+    } else if (stopKeyPressed()) {
       Serial.println("STOP");
+      unsetTarget();
       motorStop();
     } else if (preset1KeyPressed()) {
       Serial.println("PRESET 1");
