@@ -39,3 +39,8 @@ First release.
 - Added an additional capacitor to smooth out the position sensor signal from the potentiometer
 
 ## DIY Veroboard
+
+The veroboard (stripboard) is Rev A and has a different Arduino pinout, so make sure
+to adjust the firmware code.
+
+<img src="veroboard/wallduino_veroboard.png" alt="WallDuino" width="400">
