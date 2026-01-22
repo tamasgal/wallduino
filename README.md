@@ -1,6 +1,6 @@
 # WallDuino
 
-![](https://github.com/tamasgal/wallduino/raw/master/docs/images/WallDuino.png)
+<img src="docs/images/WallDuino.png" alt="WallDuino" width="400">
 
 Drop-in replacement board for the WallWizard remote-controlled TV wall mount
 including PCB, DIY veroboard (stripboard) layouts and an open source firmware
