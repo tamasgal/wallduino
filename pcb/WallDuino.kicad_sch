@@ -6,8 +6,8 @@
 	(paper "A4")
 	(title_block
 		(title "WallDuino v1.0")
-		(date "2026-01-08")
-		(rev "1")
+		(date "2026-01-21")
+		(rev "B")
 		(company "tamasgal.com")
 		(comment 1 "Tamas Gal")
 	)
@@ -3763,6 +3763,12 @@
 		(uuid "ba7bae0e-191e-4c4b-bd4a-a246d85da17f")
 	)
 	(junction
+		(at 52.07 119.38)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "bb7941e6-cf46-4aef-9495-abd6c17219c8")
+	)
+	(junction
 		(at 194.31 82.55)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -4528,6 +4534,16 @@
 	)
 	(wire
 		(pts
+			(xy 52.07 119.38) (xy 58.42 119.38)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "bf95344f-b174-480b-a9df-9e3b28e52f58")
+	)
+	(wire
+		(pts
 			(xy 142.24 142.24) (xy 144.78 142.24)
 		)
 		(stroke
@@ -4678,7 +4694,7 @@
 	)
 	(wire
 		(pts
-			(xy 48.26 119.38) (xy 50.8 119.38)
+			(xy 48.26 119.38) (xy 52.07 119.38)
 		)
 		(stroke
 			(width 0)
@@ -5002,7 +5018,7 @@
 	)
 	(global_label "POS"
 		(shape input)
-		(at 50.8 119.38 0)
+		(at 58.42 119.38 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -5012,7 +5028,7 @@
 		)
 		(uuid "83074c58-a778-47f3-a093-22aebcab16e2")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 57.5952 119.38 0)
+			(at 65.2152 119.38 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6308,6 +6324,72 @@
 			(project ""
 				(path "/447c2ae6-6bab-4b5a-ab03-de11a538c165"
 					(reference "#PWR021")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 52.07 124.46 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "5bc7ab1b-47cf-4afb-ad2e-e791dbde3734")
+		(property "Reference" "#PWR027"
+			(at 52.07 130.81 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 52.07 129.54 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 52.07 124.46 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 52.07 124.46 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 52.07 124.46 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "70f23c1b-419e-40a1-a106-66e5f5ea62e5")
+		)
+		(instances
+			(project "WallDuino"
+				(path "/447c2ae6-6bab-4b5a-ab03-de11a538c165"
+					(reference "#PWR027")
 					(unit 1)
 				)
 			)
@@ -7623,6 +7705,76 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:C_Small")
+		(at 52.07 121.92 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "b27d82ec-8a7f-4ad8-bea6-8906e1d089c8")
+		(property "Reference" "C7"
+			(at 54.61 120.6562 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "100n"
+			(at 54.61 123.1962 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Capacitor_THT:C_Disc_D3.0mm_W1.6mm_P2.50mm"
+			(at 52.07 121.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 52.07 121.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Unpolarized capacitor, small symbol"
+			(at 52.07 121.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "8cf778b4-5a05-4c15-aa76-462e816b3bd6")
+		)
+		(pin "2"
+			(uuid "3dd1c1f8-4994-4382-a912-8ec04dc23721")
+		)
+		(instances
+			(project ""
+				(path "/447c2ae6-6bab-4b5a-ab03-de11a538c165"
+					(reference "C7")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:+5V")
 		(at 52.07 55.88 0)
 		(unit 1)
@@ -8197,7 +8349,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"
 			(at 49.53 175.26 0)
 			(effects
 				(font

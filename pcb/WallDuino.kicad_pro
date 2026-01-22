@@ -68,8 +68,8 @@
           "Underneath the Arduino"
         ],
         [
-          "starved_thermal|130490000|68837042|a07e3855-219b-45e5-94c0-038ff563c239|523da06e-fdca-43e7-b359-0c59ac2a5f86|B.Cu",
-          ""
+          "courtyards_overlap|152255000|71955000|c006737f-5c59-4ea5-9279-6e2dffe7f8b7|c74e6d63-629c-4ca5-8b43-1c219848edec",
+          "C7 fits below A1"
         ],
         [
           "starved_thermal|130490000|69870000|4f61b3f2-0a9d-4bf9-ac93-ea8618d5b8af|523da06e-fdca-43e7-b359-0c59ac2a5f86|F.Cu",
@@ -593,12 +593,36 @@
           "label": "Datasheet",
           "name": "Datasheet",
           "show": true
+        },
+        {
+          "group_by": false,
+          "label": "Sim.Pins",
+          "name": "Sim.Pins",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "Sim.Device",
+          "name": "Sim.Device",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "Description",
+          "name": "Description",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "#",
+          "name": "${ITEM_NUMBER}",
+          "show": false
         }
       ],
       "filter_string": "",
       "group_symbols": true,
       "include_excluded_from_bom": true,
-      "name": "Default Editing",
+      "name": "",
       "sort_asc": true,
       "sort_field": "Reference"
     },
