@@ -1,8 +1,12 @@
 # WallDuino
 
+![](https://github.com/tamasgal/wallduino/raw/master/docs/images/WallDuino.png)
+
 Drop-in replacement board for the WallWizard remote-controlled TV wall mount
 including PCB, DIY veroboard (stripboard) layouts and an open source firmware
 for Arduino compatible microcontrollers.
+
+Manual: [`WallDuino_Manual.pdf`](https://github.com/tamasgal/wallduino/blob/main/docs/WallDuino_Manual.pdf)
 
 ## Firmware
 
@@ -12,11 +16,10 @@ Code: `firmware/WallDuino`
 
 ### Changelog
 
-#### v1.0 - 2026-01-09
+#### v1.1 - 2026-01-22
 
-Initial release
-
-## Hardware Components
+- Persistent presets after reboot
+- Home button support to "go home"
 
 #### v1.0 - 2026-01-09
 
@@ -29,9 +32,10 @@ Initial release
 
 First release.
 
-### v1.0 (Rev B) 2026-01-08
+### v1.0 (Rev B) 2026-01-21
 
 - Heat sinking of the L293D improved significantly
 - R1, R2 and R3 removed
+- Added an additional capacitor to smooth out the position sensor signal from the potentiometer
 
 ## DIY Veroboard
