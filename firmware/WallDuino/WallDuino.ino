@@ -1,57 +1,80 @@
 #include <IRremote.hpp>
+#include <EEPROM.h>
 #include <stdint.h>
 
 #define WALLDUINO_VERSION 1.0
 
 #define IR_RECEIVE_PIN 5
 #define EN_PIN 4
-#define A1_PIN 2
-#define A2_PIN 3
+#define A1_PIN 3
+#define A2_PIN 2
 #define POSITION_PIN A0
 #define MOTOR_DIRECTION_PIN 6
 
-const float MIN_POSITION = 20.0f;          // [deg]
-const float MAX_POSITION = 250.0f;         // [deg]
-const float MAX_MOVEMENT = 5.0f;           // Maximum degrees per button press
-const float POSITION_TOLERANCE = 3.0f;     // [deg]
-const unsigned long STOP_DELAY = 100;      // delay after motor stop [ms]
-const unsigned long PRESET_TIMEOUT = 500;  // between consecutive clicks [ms]
+#define EEPROM_PRESET1_ADDR 0
+#define EEPROM_PRESET2_ADDR 4
+#define EEPROM_MAGIC_ADDR 8
+#define EEPROM_MAGIC_VALUE 0x42
 
-// IR Remote codes
+const float MIN_POSITION = 88.00f;                                            // [deg]
+const float MAX_POSITION = 210.0f;                                           // [deg]
+const float MAX_MOVEMENT = 5.0f;                                             // Maximum degrees per button press
+const float HOME_POSITION = MAX_POSITION;                                    // Home position, when HOME is pressed
+const float POSITION_TOLERANCE = 3.0f;                                       // [deg]
+const unsigned long STOP_DELAY = 100;                                        // delay after motor stop [ms]
+const unsigned long PRESET_TIMEOUT = 500;                                    // between consecutive clicks [ms]
+const float DEFAULT_PRESET_POSITION = (MAX_POSITION - MIN_POSITION) / 2.0f;  // Default position for presets
 
-const uint8_t LEFT_COMMANDS[] = {
-  0x4A,  // WallWizard
+
+struct RemoteSignature {
+  decode_type_t protocol;
+  uint16_t address;
+  uint8_t command;
 };
 
-const uint8_t RIGHT_COMMANDS[] = {
-  0x4E,  // WallWizard
+// IR Remote code signatures
+
+const RemoteSignature LEFT_COMMANDS[] = {
+  { NEC, 0x1, 0x4A },  // WallWizard
+  //{SAMSUNG, 0x7, 0x6C}  // Samsung red
 };
 
-const uint8_t STOP_COMMANDS[] = {
-  0x4F,  // WallWizard
+const RemoteSignature RIGHT_COMMANDS[] = {
+  { NEC, 0x1, 0x4E },  // WallWizard
 };
 
-const uint8_t PRESET1_COMMANDS[] = {
-  0x13,  // WallWizard
+const RemoteSignature STOP_COMMANDS[] = {
+  { NEC, 0x1, 0x4F },  // WallWizard
 };
 
-const uint8_t PRESET2_COMMANDS[] = {
-  0x12,  // WallWizard
+const RemoteSignature PRESET1_COMMANDS[] = {
+  { NEC, 0x1, 0x13 },  // WallWizard
+};
+
+const RemoteSignature PRESET2_COMMANDS[] = {
+  { NEC, 0x1, 0x12 },  // WallWizard
+};
+
+
+const RemoteSignature HOME_COMMANDS[] = {
+  { NEC, 0x1, 0xD },  // WallWizard
 };
 
 // Main logic
 
 uint8_t preset1_counter = 0;
 unsigned long preset1_timeout = 0;
-float preset1_position = (MAX_POSITION + MIN_POSITION) / 2.0f;
+float preset1_position = (MAX_POSITION - MIN_POSITION) / 2.0f;
 uint8_t preset2_counter = 0;
 unsigned long preset2_timeout = 0;
-float preset2_position = (MAX_POSITION + MIN_POSITION) / 2.0f;
+float preset2_position = (MAX_POSITION - MIN_POSITION) / 2.0f;
 
 float targetPosition = -1;  // -1 means no active target
 
-#define CHECK_COMMAND(arr) commandInArray(IrReceiver.decodedIRData.command, arr, sizeof(arr))
-
+#define CHECK_COMMAND(arr) matchesSignature(arr, sizeof(arr) / sizeof(arr[0]), \
+                                            IrReceiver.decodedIRData.protocol, \
+                                            IrReceiver.decodedIRData.address, \
+                                            IrReceiver.decodedIRData.command)
 enum MotorState {
   STOPPED = 0,
   MOVING_LEFT = -1,
@@ -72,9 +95,12 @@ bool isMovingRight() {
   return motorState == MOVING_RIGHT;
 }
 
-inline bool commandInArray(uint8_t cmd, const uint8_t* arr, uint8_t size) {
-  for (uint8_t i = 0; i < size; i++) {
-    if (cmd == arr[i]) return true;
+bool matchesSignature(const RemoteSignature* signatures, size_t count,
+                      decode_type_t protocol, uint16_t address, uint8_t command) {
+  for (size_t i = 0; i < count; i++) {
+    if (signatures[i].protocol == protocol && signatures[i].address == address && signatures[i].command == command) {
+      return true;
+    }
   }
   return false;
 }
@@ -91,12 +117,66 @@ bool stopKeyPressed() {
   return CHECK_COMMAND(STOP_COMMANDS);
 }
 
+bool homeKeyPressed() {
+  return CHECK_COMMAND(HOME_COMMANDS);
+}
+
 bool preset1KeyPressed() {
   return CHECK_COMMAND(PRESET1_COMMANDS);
 }
 
 bool preset2KeyPressed() {
   return CHECK_COMMAND(PRESET2_COMMANDS);
+}
+
+
+void writeFloatToEEPROM(int address, float value) {
+  EEPROM.put(address, value);
+}
+
+float readFloatFromEEPROM(int address) {
+  float value;
+  EEPROM.get(address, value);
+  return value;
+}
+
+void initializeEEPROM() {
+  uint8_t magic = EEPROM.read(EEPROM_MAGIC_ADDR);
+
+  if (magic != EEPROM_MAGIC_VALUE) {
+    // EEPROM not initialized, write defaults
+    Serial.println("Initializing EEPROM with default values...");
+    writeFloatToEEPROM(EEPROM_PRESET1_ADDR, DEFAULT_PRESET_POSITION);
+    writeFloatToEEPROM(EEPROM_PRESET2_ADDR, DEFAULT_PRESET_POSITION);
+    EEPROM.write(EEPROM_MAGIC_ADDR, EEPROM_MAGIC_VALUE);
+    preset1_position = DEFAULT_PRESET_POSITION;
+    preset2_position = DEFAULT_PRESET_POSITION;
+    Serial.print("Default preset positions set to: ");
+    Serial.println(DEFAULT_PRESET_POSITION);
+  } else {
+    // EEPROM already initialized, read values
+    Serial.println("Loading preset positions from EEPROM...");
+    preset1_position = readFloatFromEEPROM(EEPROM_PRESET1_ADDR);
+    preset2_position = readFloatFromEEPROM(EEPROM_PRESET2_ADDR);
+    Serial.print("Preset 1 position: ");
+    Serial.println(preset1_position);
+    Serial.print("Preset 2 position: ");
+    Serial.println(preset2_position);
+  }
+}
+
+void savePreset1Position(float position) {
+  preset1_position = position;
+  writeFloatToEEPROM(EEPROM_PRESET1_ADDR, position);
+  Serial.print("Preset 1 saved to EEPROM at position: ");
+  Serial.println(preset1_position);
+}
+
+void savePreset2Position(float position) {
+  preset2_position = position;
+  writeFloatToEEPROM(EEPROM_PRESET2_ADDR, position);
+  Serial.print("Preset 2 saved to EEPROM at position: ");
+  Serial.println(preset2_position);
 }
 
 void setup() {
@@ -110,6 +190,7 @@ void setup() {
   pinMode(MOTOR_DIRECTION_PIN, INPUT_PULLUP);
   motorStop();
   unsetTarget();
+  initializeEEPROM();
   IrReceiver.begin(IR_RECEIVE_PIN, ENABLE_LED_FEEDBACK);
 }
 
@@ -146,7 +227,9 @@ void motorStop() {
   digitalWrite(EN_PIN, LOW);
   delay(STOP_DELAY);
   motorState = STOPPED;
-  Serial.println("Motor stopped.");
+  Serial.print("Motor stopped at ");
+  float pos = readPosition();
+  Serial.println(pos);
 }
 
 // Return the current position in degrees
@@ -194,6 +277,7 @@ void printTarget() {
 }
 
 void loop() {
+
   if (preset1_counter > 0 && preset1_timeout != 0 && millis() - preset1_timeout >= PRESET_TIMEOUT) {
     Serial.println("Preset 1 requested");
     setTarget(preset1_position);
@@ -248,6 +332,11 @@ void loop() {
       Serial.println("STOP");
       unsetTarget();
       motorStop();
+    } else if (homeKeyPressed()) {
+      Serial.println("STOP");
+      setTarget(HOME_POSITION);
+      Serial.print("Going home: ");
+      Serial.println(HOME_POSITION);
     } else if (preset1KeyPressed()) {
       Serial.println("PRESET 1");
       if (millis() - preset1_timeout < PRESET_TIMEOUT && preset1_timeout != 0) {
@@ -257,9 +346,7 @@ void loop() {
         Serial.println(preset1_counter);
 
         if (preset1_counter >= 3) {
-          preset1_position = readPosition();
-          Serial.print("Preset 1 saved at position: ");
-          Serial.println(preset1_position);
+          savePreset1Position(readPosition());
           preset1_counter = 0;  // Reset counter
           preset1_timeout = 0;  // Reset timeout
         } else {
@@ -279,9 +366,7 @@ void loop() {
         Serial.println(preset2_counter);
 
         if (preset2_counter >= 3) {
-          preset2_position = readPosition();
-          Serial.print("Preset 2 saved at position: ");
-          Serial.println(preset2_position);
+          savePreset2Position(readPosition());
           preset2_counter = 0;  // Reset counter
           preset2_timeout = 0;  // Reset timeout
         } else {
