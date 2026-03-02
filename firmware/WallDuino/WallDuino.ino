@@ -4,10 +4,10 @@
 
 #define WALLDUINO_VERSION 1.0
 
-#define IR_RECEIVE_PIN 5
-#define EN_PIN 4
-#define A1_PIN 3
-#define A2_PIN 2
+#define IR_RECEIVE_PIN 4  // 5
+#define EN_PIN 9
+#define A1_PIN 11  // 3
+#define A2_PIN 10  //2
 #define POSITION_PIN A0
 #define MOTOR_DIRECTION_PIN 6
 
@@ -16,15 +16,28 @@
 #define EEPROM_MAGIC_ADDR 8
 #define EEPROM_MAGIC_VALUE 0x42
 
-const float MIN_POSITION = 88.00f;                                            // [deg]
+#define SERIAL_DEBUG 0  // Set to 1 to enable, 0 to disable
+
+#if SERIAL_DEBUG
+#define DEBUG_BEGIN(baud) Serial.begin(baud)
+#define DEBUG_PRINT(x) Serial.print(x)
+#define DEBUG_PRINTLN(x) Serial.println(x)
+#define DEBUG_PRINT2(x, y) Serial.print(x, y)
+#else
+#define DEBUG_BEGIN(baud)
+#define DEBUG_PRINT(x)
+#define DEBUG_PRINTLN(x)
+#define DEBUG_PRINT2(x, y)
+#endif
+
+const float MIN_POSITION = 88.00f;                                           // [deg]
 const float MAX_POSITION = 210.0f;                                           // [deg]
-const float MAX_MOVEMENT = 5.0f;                                             // Maximum degrees per button press
+const float MAX_MOVEMENT = 45.0f;                                            // Maximum degrees per button press
 const float HOME_POSITION = MAX_POSITION;                                    // Home position, when HOME is pressed
 const float POSITION_TOLERANCE = 3.0f;                                       // [deg]
 const unsigned long STOP_DELAY = 100;                                        // delay after motor stop [ms]
 const unsigned long PRESET_TIMEOUT = 500;                                    // between consecutive clicks [ms]
-const float DEFAULT_PRESET_POSITION = (MAX_POSITION - MIN_POSITION) / 2.0f;  // Default position for presets
-
+const float DEFAULT_PRESET_POSITION = (MIN_POSITION + MAX_POSITION) / 2.0f;  // Default position for presets
 
 struct RemoteSignature {
   decode_type_t protocol;
@@ -64,10 +77,10 @@ const RemoteSignature HOME_COMMANDS[] = {
 
 uint8_t preset1_counter = 0;
 unsigned long preset1_timeout = 0;
-float preset1_position = (MAX_POSITION - MIN_POSITION) / 2.0f;
+float preset1_position = DEFAULT_PRESET_POSITION;
 uint8_t preset2_counter = 0;
 unsigned long preset2_timeout = 0;
-float preset2_position = (MAX_POSITION - MIN_POSITION) / 2.0f;
+float preset2_position = DEFAULT_PRESET_POSITION;
 
 float targetPosition = -1;  // -1 means no active target
 
@@ -142,7 +155,6 @@ float readFloatFromEEPROM(int address) {
 
 void initializeEEPROM() {
   uint8_t magic = EEPROM.read(EEPROM_MAGIC_ADDR);
-
   if (magic != EEPROM_MAGIC_VALUE) {
     // EEPROM not initialized, write defaults
     Serial.println("Initializing EEPROM with default values...");
@@ -181,6 +193,10 @@ void savePreset2Position(float position) {
 
 void setup() {
   Serial.begin(115200);
+#if SERIAL_DEBUG
+    delay(3000);  // give the serial monitor time to open and see the very first messages
+#endif
+
   Serial.print("\nStarting WallDuino version ");
   Serial.println(WALLDUINO_VERSION);
 
@@ -191,6 +207,7 @@ void setup() {
   motorStop();
   unsetTarget();
   initializeEEPROM();
+
   IrReceiver.begin(IR_RECEIVE_PIN, ENABLE_LED_FEEDBACK);
 }
 
@@ -201,7 +218,7 @@ int getMotorDirection() {
 
 void motorLeft() {
   if (isMovingRight()) {
-    Serial.println("Motor is moving right, stopping first.");
+    DEBUG_PRINTLN("Motor is moving right, stopping first.");
     motorStop();
     Serial.println("Now moving left.");
   }
@@ -213,7 +230,7 @@ void motorLeft() {
 
 void motorRight() {
   if (isMovingLeft()) {
-    Serial.println("Motor is moving left, stopping first.");
+    DEBUG_PRINTLN("Motor is moving left, stopping first.");
     motorStop();
     Serial.println("Now moving right.");
   }
@@ -239,8 +256,7 @@ float readPosition() {
 }
 
 void setTarget(float target) {
-  targetPosition = target;
-  clampTarget();
+  targetPosition = clampPosition(target);
 }
 
 void unsetTarget() {
@@ -259,14 +275,15 @@ void decreaseTarget() {
   setTarget(readPosition() - MAX_MOVEMENT);
 }
 
-// Clamps the target position to a safe range
-void clampTarget() {
-  if (targetPosition < MIN_POSITION) {
-    targetPosition = MIN_POSITION;
+// Clamps the position to a safe range
+float clampPosition(float position) {
+  if (position < MIN_POSITION) {
+    return MIN_POSITION;
   }
-  if (targetPosition > MAX_POSITION) {
-    targetPosition = MAX_POSITION;
+  if (position > MAX_POSITION) {
+    return MAX_POSITION;
   }
+  return position;
 }
 
 void printTarget() {
@@ -317,7 +334,9 @@ void loop() {
   }
 
   if (IrReceiver.decode()) {
+#if SERIAL_DEBUG
     IrReceiver.printIRResultShort(&Serial);
+#endif
     auto& data = IrReceiver.decodedIRData;
 
     if (leftKeyPressed()) {
