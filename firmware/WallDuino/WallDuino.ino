@@ -10,6 +10,7 @@
 #define A2_PIN 10  //2
 #define POSITION_PIN A0
 #define MOTOR_DIRECTION_PIN 6
+#define MIN_PRESSES_TO_SAVE_PRESET 7  // Logitech sends 3 with each press, so let's require 7 presses
 
 #define EEPROM_PRESET1_ADDR 0
 #define EEPROM_PRESET2_ADDR 4
@@ -30,9 +31,9 @@
 #define DEBUG_PRINT2(x, y)
 #endif
 
-const float MIN_POSITION = 88.00f;                                           // [deg]
-const float MAX_POSITION = 210.0f;                                           // [deg]
-const float MAX_MOVEMENT = 45.0f;                                            // Maximum degrees per button press
+const float MIN_POSITION = 80.00f;                                           // [deg]
+const float MAX_POSITION = 200.0f;                                           // [deg]
+const float MAX_MOVEMENT = 10.0f;                                            // Maximum degrees per button press
 const float HOME_POSITION = MAX_POSITION;                                    // Home position, when HOME is pressed
 const float POSITION_TOLERANCE = 3.0f;                                       // [deg]
 const unsigned long STOP_DELAY = 100;                                        // delay after motor stop [ms]
@@ -50,18 +51,22 @@ struct RemoteSignature {
 const RemoteSignature LEFT_COMMANDS[] = {
   { NEC, 0x1, 0x4A },  // WallWizard
   //{SAMSUNG, 0x7, 0x6C}  // Samsung red
+  { RC6, 0x0, 0x6D},    // Logitec RED
 };
 
 const RemoteSignature RIGHT_COMMANDS[] = {
   { NEC, 0x1, 0x4E },  // WallWizard
+  { RC6, 0x0, 0x70},    // Logitec BLUE
 };
 
 const RemoteSignature STOP_COMMANDS[] = {
   { NEC, 0x1, 0x4F },  // WallWizard
+  { RC6, 0x0, 0xA},    // Logitec EXIT
 };
 
 const RemoteSignature PRESET1_COMMANDS[] = {
   { NEC, 0x1, 0x13 },  // WallWizard
+  { RC6, 0x0, 0x6F},    // Logitec YELLOW
 };
 
 const RemoteSignature PRESET2_COMMANDS[] = {
@@ -71,6 +76,7 @@ const RemoteSignature PRESET2_COMMANDS[] = {
 
 const RemoteSignature HOME_COMMANDS[] = {
   { NEC, 0x1, 0xD },  // WallWizard
+  { RC6, 0x0, 0x6E},    // Logitec GREEN
 };
 
 // Main logic
@@ -311,7 +317,6 @@ void loop() {
   }
 
   if (targetIsSet()) {
-    delay(100);
     float currentPosition = readPosition();
     // we allow an external jumper to change the actual direction of movement
     float deltaPosition = getMotorDirection() * (targetPosition - currentPosition);
@@ -364,7 +369,7 @@ void loop() {
         Serial.print("Preset 1 counter: ");
         Serial.println(preset1_counter);
 
-        if (preset1_counter >= 3) {
+        if (preset1_counter >= MIN_PRESSES_TO_SAVE_PRESET) {
           savePreset1Position(readPosition());
           preset1_counter = 0;  // Reset counter
           preset1_timeout = 0;  // Reset timeout
@@ -384,7 +389,7 @@ void loop() {
         Serial.print("Preset 2 counter: ");
         Serial.println(preset2_counter);
 
-        if (preset2_counter >= 3) {
+        if (preset2_counter >= MIN_PRESSES_TO_SAVE_PRESET) {
           savePreset2Position(readPosition());
           preset2_counter = 0;  // Reset counter
           preset2_timeout = 0;  // Reset timeout
